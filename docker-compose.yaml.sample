@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+    db:
+        image: mariadb
+
+    build:
+        build: /path/to/project/docker
+        volumes:
+            - /path/to/project:/var/app
+        command: ['stack', 'build']
+
+    web:
+        build: /path/to/project/docker
+        links:
+            - db
+        ports:
+            - 8080:80
+        volumes:
+            - /path/to/project:/var/app
+        command: ['stack', 'exec', 'bphug-warranty-exe']
