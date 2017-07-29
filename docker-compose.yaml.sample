@@ -5,7 +5,9 @@ services:
         image: mariadb
         environment:
             MYSQL_ROOT_PASSWORD: 'root'
-            
+        volumes:
+            - /path/to/project/init-sql:/docker-entrypoint-initdb.d/:ro
+
     build:
         build: /path/to/project/docker
         volumes:
