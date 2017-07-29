@@ -3,7 +3,9 @@ version: '3'
 services:
     db:
         image: mariadb
-
+        environment:
+            MYSQL_ROOT_PASSWORD: 'root'
+            
     build:
         build: /path/to/project/docker
         volumes:
