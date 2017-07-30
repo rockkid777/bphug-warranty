@@ -1,6 +1,9 @@
 module Main where
 
 import           Api.WarrantyService
+import           Persistence.MySQL
 
 main :: IO()
-main = run 80
+main = do
+    handle <- makeHandle "db" "root" "warranties"
+    run 80 handle

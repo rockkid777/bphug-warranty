@@ -16,6 +16,9 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Api.WarrantyService
+                     , Model.Warranty
+                     , Persistence.Handle
+                     , Persistence.MySQL
   build-depends:       base >= 4.7 && < 5
                      , mysql-simple
                      , servant
@@ -32,7 +35,9 @@ library
                      , wai
                      , warp
                      , transformers
-                     
+                     , uuid
+                     , random
+
   default-language:    Haskell2010
 
 executable bphug-warranty-exe

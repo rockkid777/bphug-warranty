@@ -17,25 +17,16 @@ import           Data.Text.Encoding
 import           Data.Time                  (UTCTime (..), fromGregorian)
 import           Data.Typeable              (Typeable)
 import           GHC.Generics
+import           Model.Warranty
 import           Network.Wai
 import           Network.Wai.Handler.Warp
+import           Persistence.Handle
 import           Servant
 import           Servant.Swagger
-import           System.IO
+import           System.IO                  (hPutStrLn, stderr)
 
 warrantyAPI :: Proxy API
 warrantyAPI = Proxy
-
--- | A single Todo entry.
-data Warranty = Warranty
-  { expiryDate :: UTCTime  -- ^ Expiry datetime.
-  , name       :: Text     -- ^ Item name.
-  , price      :: Int      -- ^ Price of thte item
-  } deriving (Show, Generic, Typeable)
-
--- | A unique Warranty entry ID.
-newtype WarrantyId = WarrantyId Text
-    deriving (Show, Generic, Typeable, ToJSON, FromHttpApiData)
 
 -- | The API of a Warranty service.
 type WarrantyAPI
@@ -86,8 +77,8 @@ server = return warrantySwagger :<|> (serveListWarranties :<|> serveGetWarranty 
 mkApp :: IO Application
 mkApp = return $ serve warrantyAPI server
 
-run :: Int -> IO ()
-run port = do
+run :: Int -> Handle m -> IO ()
+run port _ = do
   let settings =
         setPort port $
         setBeforeMainLoop (hPutStrLn stderr ("listening on port " ++ show port)) $
