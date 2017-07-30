@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import           Api.WarrantyService
 
-main :: IO ()
-main = someFunc
+main :: IO()
+main = run 80
