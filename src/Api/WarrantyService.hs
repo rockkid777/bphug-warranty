@@ -10,10 +10,10 @@ import           Control.Lens
 import           Control.Monad.Trans.Except
 import           Data.Aeson
 import           Data.Aeson.Encode.Pretty   (encodePretty)
-import qualified Data.ByteString.Lazy.Char8 as BL8
 import           Data.Proxy
 import           Data.Swagger
 import           Data.Text                  (Text)
+import           Data.Text.Encoding
 import           Data.Time                  (UTCTime (..), fromGregorian)
 import           Data.Typeable              (Typeable)
 import           GHC.Generics
@@ -23,61 +23,68 @@ import           Servant
 import           Servant.Swagger
 import           System.IO
 
-todoAPI :: Proxy API
-todoAPI = Proxy
+warrantyAPI :: Proxy API
+warrantyAPI = Proxy
 
--- | The API of a Todo service.
-type TodoAPI
-    = "todo" :> Get '[JSON] [Todo]
- :<|> "todo" :> ReqBody '[JSON] Todo :> Post '[JSON] TodoId
- :<|> "todo" :> Capture "id" TodoId :> Get '[JSON] Todo
- :<|> "todo" :> Capture "id" TodoId :> ReqBody '[JSON] Todo :> Put '[JSON] TodoId
+-- | A single Todo entry.
+data Warranty = Warranty
+  { expiryDate :: UTCTime  -- ^ Expiry datetime.
+  , name       :: Text     -- ^ Item name.
+  , price      :: Int      -- ^ Price of thte item
+  } deriving (Show, Generic, Typeable)
+
+-- | A unique Warranty entry ID.
+newtype WarrantyId = WarrantyId Text
+    deriving (Show, Generic, Typeable, ToJSON, FromHttpApiData)
+
+-- | The API of a Warranty service.
+type WarrantyAPI
+    = "warranty" :> Get '[JSON] [Warranty]
+    :<|> "warranty" :> Capture "id" WarrantyId :> Get '[JSON] Warranty
+    :<|> "warranty" :> Capture "id" WarrantyId :> ReqBody '[JSON] Warranty
+            :> Put '[JSON] WarrantyId
+    :<|> "warranty" :> ReqBody '[JSON] Warranty :> Post '[JSON] WarrantyId
 
 -- | API for serving @swagger.json@.
 type SwaggerAPI = "swagger.json" :> Get '[JSON] String
 
--- | Combined API of a Todo service with Swagger documentation.
-type API = SwaggerAPI :<|> TodoAPI
+-- | Combined API of a Warranty service with Swagger documentation.
+type API = SwaggerAPI :<|> WarrantyAPI
 
--- | A single Todo entry.
-data Todo = Todo
-  { created :: UTCTime  -- ^ Creation datetime.
-  , summary :: Text     -- ^ Task summary.
-  } deriving (Show, Generic, Typeable)
+instance ToJSON Warranty
+instance FromJSON Warranty
 
--- | A unique Todo entry ID.
-newtype TodoId = TodoId Int
-  deriving (Show, Generic, Typeable, ToJSON, FromHttpApiData)
-
-instance ToJSON Todo
-instance FromJSON Todo
-
-instance ToSchema Todo where
+instance ToSchema Warranty where
   declareNamedSchema proxy = genericDeclareNamedSchema defaultSchemaOptions proxy
-    & mapped.schema.description ?~ "This is some real Todo right here"
-    & mapped.schema.example ?~ toJSON (Todo (UTCTime (fromGregorian 2015 12 31) 0) "get milk")
+    & mapped.schema.description ?~ "This is some real Warranty right here"
+    & mapped.schema.example ?~ toJSON (Warranty (UTCTime (fromGregorian 2018 12 31) 0) "Tv" 200000)
 
-instance ToParamSchema TodoId
-instance ToSchema TodoId
+instance ToParamSchema WarrantyId
+instance ToSchema WarrantyId
 
--- | Swagger spec for Todo API.
-todoSwagger :: String
-todoSwagger = show $ toSwagger todoAPI
-  & info.title   .~ "Todo API"
-  & info.version .~ "1.0"
-  & info.description ?~ "This is an API that tests swagger integration"
-  & info.license ?~ ("MIT" & url ?~ URL "http://mit.com")
+-- | Swagger spec for Warranty API.
+warrantySwagger :: String
+warrantySwagger = show $ toSwagger warrantyAPI
+  & info.title   .~ "Warranty API"
+  & info.version .~ "0.1"
+  & info.description ?~ "This is an API that gives details about Warranty service"
 
--- | Combined server of a Todo service with Swagger documentation.
+serveListWarranties = return []
+serveGetWarranty _ = return $ Warranty (UTCTime (fromGregorian 2018 12 31) 0) "Tv" 200000
+servePutWarranty id' _ = return id'
+servePostWarranty _ = return $ WarrantyId "777"
+
+-- | Combined server of a Warranty service with Swagger documentation.
 server :: Server API
-server = return todoSwagger :<|> error "not implemented"
+server = return warrantySwagger :<|> (serveListWarranties :<|> serveGetWarranty :<|>
+    servePutWarranty :<|> servePostWarranty)
 
--- | Output generated @swagger.json@ file for the @'TodoAPI'@.
-writeSwaggerJSON :: IO ()
-writeSwaggerJSON = BL8.writeFile "example/swagger.json" (encodePretty todoSwagger)
+-- -- | Output generated @swagger.json@ file for the @'WarrantyAPI'@.
+-- writeSwaggerJSON :: IO ()
+-- writeSwaggerJSON = BL8.writeFile "example/swagger.json" (encodePretty warrantySwagger)
 
 mkApp :: IO Application
-mkApp = return $ serve todoAPI server
+mkApp = return $ serve warrantyAPI server
 
 run :: Int -> IO ()
 run port = do

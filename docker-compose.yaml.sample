@@ -12,7 +12,7 @@ services:
         build: /path/to/project/docker
         volumes:
             - /path/to/project:/var/app
-        command: ['stack', 'build']
+        command: ['stack', 'build', '--pedantic']
 
     web:
         build: /path/to/project/docker
